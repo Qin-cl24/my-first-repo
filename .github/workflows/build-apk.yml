@@ -26,7 +26,7 @@ jobs:
         gradle assembleDebug
     
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: epinoia-deskpet-v4
         path: app/build/outputs/apk/debug/app-debug.apk
