@@ -3,8 +3,6 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build:
@@ -19,14 +17,16 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
     
-    - name: Build with Gradle
-      run: ./gradlew assembleDebug
+    - name: Build APK
+      run: |
+        cd app
+        gradle assembleDebug
     
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
-        name: app-debug
+        name: epinoia-deskpet-v4
 path: app/build/outputs/apk/debug/app-debug.apk
