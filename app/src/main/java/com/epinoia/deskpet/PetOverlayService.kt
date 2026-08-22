@@ -1,6 +1,5 @@
 package com.epinoia.deskpet
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -17,6 +16,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
 
 class PetOverlayService : Service() {
     private var windowManager: WindowManager? = null
@@ -54,7 +54,7 @@ class PetOverlayService : Service() {
             packageManager.getLaunchIntentForPackage(packageName),
             PendingIntent.FLAG_IMMUTABLE
         )
-        val notification: Notification = Notification.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("🧡 Epinoia 桌宠")
             .setContentText("点击返回应用")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
