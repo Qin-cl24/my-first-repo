@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  body { display: flex; align-items: flex-end; justify-content: center; }
+
+  .pet {
+    position: relative; width: 120px; height: 150px; cursor: pointer;
+    animation: idle 3s ease-in-out infinite;
+  }
+  @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  .pet.bounce { animation: bounce .5s ease; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-30px) scale(1.1); } }
+
+  .head { position: relative; width: 84px; height: 68px; background: #f7b731; border-radius: 50% 50% 45% 45%; margin: 0 auto; }
+  .ear { position: absolute; top: -10px; width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 22px solid #f7b731; }
+  .ear::after { content:''; position:absolute; top:7px; left:-8px; width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent; border-bottom:13px solid #ff9ff3; }
+  .ear.l { left: 7px; transform: rotate(-12deg); }
+  .ear.r { right: 7px; transform: rotate(12deg); }
+
+  .eye { position: absolute; top: 28px; width: 11px; height: 13px; background: #2d3436; border-radius: 50%; animation: blink 4s infinite; }
+  .eye.l { left: 18px; } .eye.r { right: 18px; }
+  .eye::after { content:''; position:absolute; top:2px; left:2px; width:4px; height:4px; background:#fff; border-radius:50%; }
+  @keyframes blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+  .pet.sleeping .eye { animation: none; height: 2px; border-radius: 2px; top: 36px; background: #2d3436; }
+
+  .nose { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); width: 10px; height: 7px; background: #ff6b81; border-radius: 50%; }
+  .mouth { position: absolute; top: 51px; left: 50%; transform: translateX(-50%); width: 18px; height: 8px; }
+  .mouth::before, .mouth::after { content:''; position:absolute; top:0; width:9px; height:8px; border-bottom:2px solid #2d3436; }
+  .mouth::before { left:0; border-radius:0 0 0 60%; transform: rotate(20deg); }
+  .mouth::after { right:0; border-radius:0 0 60% 0; transform: rotate(-20deg); }
+  .pet.sleeping .mouth { display: none; }
+
+  .whisker { position: absolute; top: 42px; width: 28px; height: 1.5px; background: #2d3436; opacity: .5; }
+  .whisker.w1 { left: -24px; transform: rotate(-12deg); } .whisker.w2 { left: -26px; top: 48px; transform: rotate(6deg); }
+  .whisker.w3 { right: -24px; transform: rotate(12deg); } .whisker.w4 { right: -26px; top: 48px; transform: rotate(-6deg); }
+
+  .bow { position: absolute; top: -4px; right: -12px; font-size: 1.2rem; animation: sway 2s ease-in-out infinite; transform-origin: bottom center; }
+  @keyframes sway { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+
+  .body { position: relative; width: 96px; height: 50px; background: #f7b731; border-radius: 50% 50% 45% 45%; margin: -6px auto 0; }
+  .paw { position: absolute; bottom: 0; width: 18px; height: 12px; background: #f7b731; border-radius: 50%; border: 2px solid #e1a01a; }
+  .paw.l { left: 14px; } .paw.r { right: 14px; }
+  .tail { position: absolute; bottom: -4px; right: -22px; width: 34px; height: 14px; background: #f7b731; border-radius: 50%; transform-origin: left center; animation: wag 1.2s ease-in-out infinite; }
+  @keyframes wag { 0%,100% { transform: rotate(18deg); } 50% { transform: rotate(-18deg); } }
+  .pet.sleeping .tail { animation-duration: 3s; }
+
+  .bubble {
+    position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,.95); color: #333; padding: 4px 10px;
+    border-radius: 12px; font-size: 11px; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2); opacity: 0; transition: opacity .3s;
+    max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bubble.show { opacity: 1; }
+
+  .zzz { position: absolute; top: -16px; right: 6px; color: #95a5a6; font-size: 14px; font-weight: bold; opacity: 0; }
+  .pet.sleeping .zzz { opacity: 1; animation: floatz 2s ease-in-out infinite; }
+  @keyframes floatz { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
+
+  .hearts { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); font-size: 18px; opacity: 0; pointer-events: none; }
+  .pet.loved .hearts { animation: rise 1s ease-out forwards; }
+  @keyframes rise { 0% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -40px) scale(1.4); } }
+</style>
+</head>
+<body>
+  <div class="pet" id="pet">
+    <span class="bubble" id="bubble"></span>
+    <span class="hearts">💗</span>
+    <span class="zzz">zZ</span>
+    <div class="ear l"></div><div class="ear r"></div>
+    <span class="bow">🎀</span>
+    <div class="head">
+      <div class="eye l"></div><div class="eye r"></div>
+      <div class="nose"></div><div class="mouth"></div>
+      <div class="whisker w1"></div><div class="whisker w2"></div>
+      <div class="whisker w3"></div><div class="whisker w4"></div>
+    </div>
+    <div class="body">
+      <div class="paw l"></div><div class="paw r"></div>
+      <div class="tail"></div>
+    </div>
+  </div>
+
+<script>
+  const pet = document.getElementById('pet');
+  const bubble = document.getElementById('bubble');
+  let sleepTimer = null;
+
+  function say(text, ms) {
+    bubble.textContent = text;
+    bubble.classList.add('show');
+    clearTimeout(say._t);
+    say._t = setTimeout(() => bubble.classList.remove('show'), ms || 1800);
+  }
+
+  function bounce() {
+    pet.classList.remove('bounce'); void pet.offsetWidth; pet.classList.add('bounce');
+  }
+
+  // === petEngine: 原生层调用入口 ===
+  window.petEngine = {
+    onTap: function() {
+      pet.classList.remove('sleeping');
+      clearTimeout(sleepTimer);
+      const msgs = ['喵~', '主人!', '(｡•ᴗ•｡)', '在呢在呢'];
+      say(msgs[Math.floor(Math.random() * msgs.length)]);
+    },
+    onDoubleTap: function() {
+      pet.classList.remove('sleeping');
+      bounce();
+      say('喵!! 好开心!');
+    },
+    onLongPress: function() {
+      if (pet.classList.contains('sleeping')) {
+        pet.classList.remove('sleeping');
+        say('唔...醒了');
+      } else {
+        pet.classList.add('sleeping');
+        say('zZz... 困了');
+      }
+    },
+    onDragEnd: function() {
+      say('嘿咻~');
+    },
+    onFling: function() {
+      say('哇——!');
+    }
+  };
+
+  // 无互动 20 秒自动犯困
+  sleepTimer = setTimeout(() => pet.classList.add('sleeping'), 20000);
+  setInterval(() => {
+    if (!pet.classList.contains('sleeping')) {
+      clearTimeout(sleepTimer);
+      sleepTimer = setTimeout(() => pet.classList.add('sleeping'), 20000);
+    }
+  }, 10000);
+
+  pet.addEventListener('click', () => window.petEngine.onTap());
+</script>
+</body>
+</html>
