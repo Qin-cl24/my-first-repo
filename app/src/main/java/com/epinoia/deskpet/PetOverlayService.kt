@@ -78,7 +78,7 @@ class PetOverlayService : Service() {
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = dpToPx(20)
-            y = dpToPx(120)
+            y = dpToPx(250)
         }
 
         overlayView = WebView(this).apply {
