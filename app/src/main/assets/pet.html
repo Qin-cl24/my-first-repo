@@ -35,21 +35,55 @@
     margin: 12px auto 0;
   }
   /* 眼睛（两只） */
-  .eye { position: absolute; width: 6px; height: 6px; background: #000; top: 6px; transition: height .1s; }
+  .eye { position: absolute; width: 6px; height: 6px; background: #000; top: 6px; transition: height .1s, transform .15s, border-radius .15s; }
   .eye-left { left: 10px; } .eye-right { right: 10px; }
   .pet.blink .eye { height: 2px; }
-  /* 手：左右对称，垂直紧贴身体两侧 */
   /* 手：小正方形、与身体同色、垂直居中、紧贴身体两侧无缝隙 */
   .arm { position: absolute; width: 8px; height: 8px; background: #e67e22; top: 8px; }
   .arm-left { left: -8px; } .arm-right { right: -8px; }
   /* 腿：两条，分开在下方 */
   .leg { position: absolute; width: 8px; height: 6px; background: #d35400; bottom: -6px; border-radius: 0 0 4px 4px; }
   .leg-left { left: 10px; } .leg-right { right: 10px; }
+
+  /* ===== 自主小动作特效 ===== */
+  .fx { position: absolute; display: none; pointer-events: none; z-index: 5; font-size: 9px; }
+  .fx.show { display: block; animation: fxrise 1.2s ease-out forwards; }
+  @keyframes fxrise { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-14px) scale(1.4); } }
+  .fx-heart { top: -6px; left: 30px; }
+  .fx-tear  { top: 22px; left: 13px; }
+  .fx-tear.r{ top: 22px; left: auto; right: 13px; }
+  .fx-star  { top: -6px; left: 46px; }
+  .fx-zzz   { top: -9px; left: 42px; font-size: 7px; }
+  .fx-smoke { top: -9px; left: 8px; }
+
+  /* 动作表情 */
+  .act-happy .eye { height: 2px; border-radius: 50%; }
+  .act-sleepy .eye { height: 2px; }
+  .act-sleepy { animation: yawn 2.4s ease-in-out infinite; }
+  @keyframes yawn { 0%,100% { transform: translateY(0) scaleY(1); } 25% { transform: translateY(-3px) scaleY(1.1); } 50% { transform: translateY(0) scaleY(1); } }
+  .act-angry .eye-left { transform: rotate(-45deg); }
+  .act-angry .eye-right { transform: rotate(45deg); }
+  .act-angry { animation: shake .3s ease-in-out 6; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+  .act-cry .eye { height: 2px; border-radius: 50%; }
+  .act-cry { animation: crybob 1.2s ease-in-out infinite; }
+  @keyframes crybob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(1px); } }
+  .act-proud .eye { height: 2px; }
+  .act-proud { animation: proudbob .8s ease-in-out infinite; }
+  @keyframes proudbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .act-wiggle { animation: wiggle .5s ease-in-out 4; }
+  @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
 </style>
 </head>
 <body>
   <div class="pet" id="pet">
     <span class="bubble" id="bubble"></span>
+    <span class="fx fx-heart">❤</span>
+    <span class="fx fx-tear">💧</span>
+    <span class="fx fx-tear r">💧</span>
+    <span class="fx fx-star">✨</span>
+    <span class="fx fx-zzz">zZz</span>
+    <span class="fx fx-smoke">💢</span>
     <div class="body">
       <div class="eye eye-left"></div>
       <div class="eye eye-right"></div>
@@ -87,6 +121,42 @@
   };
 
   pet.addEventListener('click', () => window.petEngine.onTap());
+
+  // ===== 自主小动作：参考相册表情图，随机自觉做 =====
+  var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle'];
+  var FX = {
+    happy: ['.fx-heart'],
+    sleepy: ['.fx-zzz'],
+    angry: ['.fx-smoke'],
+    cry: ['.fx-tear', '.fx-tear.r'],
+    proud: ['.fx-star'],
+    jump: [],
+    wiggle: []
+  };
+  function clearFx() {
+    document.querySelectorAll('.fx').forEach(function(el) { el.classList.remove('show'); });
+  }
+  function runAction() {
+    pet.classList.remove('blink');
+    ACTIONS.forEach(function(a) { pet.classList.remove('act-' + a); });
+    clearFx();
+    var a = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
+    pet.classList.add('act-' + a);
+    if (a === 'jump') bounce();
+    (FX[a] || []).forEach(function(sel) {
+      var el = document.querySelector(sel);
+      if (el) el.classList.add('show');
+    });
+    setTimeout(function() {
+      pet.classList.remove('act-' + a);
+      clearFx();
+    }, 2500);
+  }
+  setTimeout(function schedule() {
+    runAction();
+    setTimeout(schedule, 5000 + Math.random() * 5000); // 每 5~10 秒随机一个小动作
+  }, 4000);
+
   say('你好呀!', 2200);
 </script>
 </body>
