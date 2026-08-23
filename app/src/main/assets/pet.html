@@ -39,9 +39,10 @@
   .eye-left { left: 10px; } .eye-right { right: 10px; }
   .pet.blink .eye { height: 2px; }
   /* 手：左右对称，垂直紧贴身体两侧 */
-  .arm { position: absolute; width: 8px; height: 12px; background: #e67e22; top: 6px; border-radius: 2px; }
-  .arm-left { left: -4px; border-top-left-radius: 4px; border-bottom-left-radius: 2px; }
-  .arm-right { right: -4px; border-top-right-radius: 4px; border-bottom-right-radius: 2px; }
+  /* 手：加粗加深色、伸出身体两侧，确保小窗口可见 */
+  .arm { position: absolute; width: 10px; height: 13px; background: #d97706; top: 8px; border-radius: 3px; }
+  .arm-left { left: -6px; border-top-left-radius: 5px; border-bottom-left-radius: 3px; }
+  .arm-right { right: -6px; border-top-right-radius: 5px; border-bottom-right-radius: 3px; }
   /* 腿：两条，分开在下方 */
   .leg { position: absolute; width: 8px; height: 6px; background: #d35400; bottom: -6px; border-radius: 0 0 4px 4px; }
   .leg-left { left: 10px; } .leg-right { right: 10px; }
