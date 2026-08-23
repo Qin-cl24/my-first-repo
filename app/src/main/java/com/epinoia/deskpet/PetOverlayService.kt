@@ -1,5 +1,6 @@
 package com.epinoia.deskpet
 
+import android.animation.ValueAnimator
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -7,7 +8,9 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -31,6 +34,10 @@ class PetOverlayService : Service() {
         private const val DOUBLE_TAP_TIMEOUT = 300L
         private const val LONG_PRESS_TIMEOUT = 600L
         private const val MOVE_THRESHOLD = 10
+        private const val IDLE_TIMEOUT_MS = 10_000L      // 无操作多久后自动贴边
+        private const val DOCK_EDGE_MARGIN_DP = 16       // 贴边时留在屏内的边缘(可触摸拉回)
+        private const val DOCKED_ALPHA = 0.5f            // 贴边半透明度
+        private const val DOCK_ANIM_MS = 300L
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -96,6 +103,7 @@ class PetOverlayService : Service() {
 
         try {
             windowManager?.addView(overlayView, params)
+            resetIdleTimer()
             Toast.makeText(this, "桌宠已上线！", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "启动失败：${e.message}", Toast.LENGTH_LONG).show()
@@ -112,17 +120,23 @@ class PetOverlayService : Service() {
     private var lastTapTime = 0L
     private var touchStartTime = 0L
     private var hasMoved = false
+    private var docked = false
+    private var dockSide = -1
+    private val handler = Handler(Looper.getMainLooper())
+    private val idleRunnable = Runnable { dockToEdge() }
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    if (docked) undock()
                     initialX = params?.x ?: 0
                     initialY = params?.y ?: 0
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
                     touchStartTime = System.currentTimeMillis()
                     hasMoved = false
+                    resetIdleTimer()
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -130,13 +144,17 @@ class PetOverlayService : Service() {
                     val dy = (event.rawY - initialTouchY).toInt()
                     if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
                         hasMoved = true
-                        params?.x = initialX + dx
-                        params?.y = initialY + dy
-                        overlayView?.let { windowManager?.updateViewLayout(it, params) }
+                        params?.let { p ->
+                            // 始终限制在屏幕可视范围内，避免拖丢/拉不回来
+                            p.x = (initialX + dx).coerceIn(0, screenW - p.width)
+                            p.y = (initialY + dy).coerceIn(0, screenH - p.height)
+                            windowManager?.updateViewLayout(overlayView, p)
+                        }
                     }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    resetIdleTimer()
                     val elapsed = System.currentTimeMillis() - touchStartTime
                     if (!hasMoved) {
                         when {
@@ -181,9 +199,59 @@ class PetOverlayService : Service() {
         overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onFling()", null)
     }
 
+    private val screenW get() = resources.displayMetrics.widthPixels
+    private val screenH get() = resources.displayMetrics.heightPixels
+
+    // === 悬浮球：无操作自动贴边 + 半透明 ===
+    private fun resetIdleTimer() {
+        handler.removeCallbacks(idleRunnable)
+        handler.postDelayed(idleRunnable, IDLE_TIMEOUT_MS)
+    }
+
+    private fun dockToEdge() {
+        val p = params ?: return
+        val w = p.width
+        val edge = dpToPx(DOCK_EDGE_MARGIN_DP)
+        val nearLeft = p.x < (screenW - w) / 2
+        val targetX = if (nearLeft) -w + edge else screenW - edge
+        dockSide = if (nearLeft) -1 else 1
+        docked = true
+        animateTo(targetX, DOCKED_ALPHA)
+    }
+
+    private fun undock() {
+        if (!docked) return
+        docked = false
+        params?.let { p ->
+            // 一碰就弹回屏内（贴左回左缘、贴右回右缘），立即响应触摸
+            p.x = if (dockSide < 0) 0 else screenW - p.width
+            p.alpha = 1f
+            overlayView?.let { windowManager?.updateViewLayout(it, p) }
+        }
+    }
+
+    private fun animateTo(targetX: Int, targetAlpha: Float) {
+        val p = params ?: return
+        val startX = p.x
+        val startAlpha = p.alpha
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = DOCK_ANIM_MS
+            addUpdateListener {
+                val f = it.animatedValue as Float
+                params?.let { pr ->
+                    pr.x = startX + ((targetX - startX) * f).toInt()
+                    pr.alpha = startAlpha + (targetAlpha - startAlpha) * f
+                    overlayView?.let { v -> windowManager?.updateViewLayout(v, pr) }
+                }
+            }
+            start()
+        }
+    }
+
     private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
+        handler.removeCallbacks(idleRunnable)
         overlayView?.let {
             windowManager?.removeView(it)
             it.destroy()
