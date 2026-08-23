@@ -19,51 +19,44 @@
   .bubble.show { opacity: 1; }
 
   .pet {
-    position: relative; width: 56px; height: 80px;
+    position: relative; width: 68px; height: 56px;
     animation: idle 2.5s ease-in-out infinite;
   }
   @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
   .pet.bounce { animation: bounce .4s ease; }
   @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
 
-  /* 主体: 长方形 */
+  /* 主体: 横向长方形 (左右宽 52, 上下扁 24) */
   .body {
     position: absolute; left: 50%; top: 2px; transform: translateX(-50%);
-    width: 24px; height: 52px; background: #D2916B;
+    width: 52px; height: 24px; background: #D2916B;
     border-radius: 3px;
   }
 
   /* 眼睛: 主体上部 */
   .eye {
-    position: absolute; top: 14px; width: 6px; height: 6px; background: #2E2E2E;
+    position: absolute; top: 5px; width: 6px; height: 6px; background: #2E2E2E;
     transition: height .1s;
   }
-  .eye.l { left: 5px; }
-  .eye.r { right: 5px; }
+  .eye.l { left: 14px; }
+  .eye.r { right: 14px; }
   .pet.blink .eye { height: 2px; }
 
-  /* 手: 主体中下部, 紧贴身体 */
+  /* 手: 主体左右两侧, 同色系, 与身体相连 */
   .arm {
-    position: absolute; top: 32px; width: 7px; height: 14px; background: #D2916B;
+    position: absolute; top: 6px; width: 8px; height: 10px; background: #D2916B;
     border-radius: 2px;
   }
-  .arm.l { left: 8px; }
-  .arm.r { right: 8px; }
+  .arm.l { left: 4px; }
+  .arm.r { right: 4px; }
 
-  /* 腿: 与身体底部相连, 无缝隙 */
+  /* 腿: 主体下方, 与身体底部相连 */
   .leg {
-    position: absolute; top: 54px; width: 8px; height: 12px; background: #D2916B;
+    position: absolute; top: 26px; width: 10px; height: 12px; background: #D2916B;
     border-radius: 2px;
   }
-  .leg.l { left: 13px; }
-  .leg.r { right: 13px; }
-
-  /* 影子 */
-  .shadow {
-    position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
-    width: 26px; height: 4px; background: rgba(70,70,70,.3);
-    border-radius: 4px;
-  }
+  .leg.l { left: 18px; }
+  .leg.r { right: 18px; }
 </style>
 </head>
 <body>
@@ -71,7 +64,6 @@
     <span class="bubble" id="bubble"></span>
     <div class="arm l"></div><div class="arm r"></div>
     <div class="leg l"></div><div class="leg r"></div>
-    <div class="shadow"></div>
     <div class="body">
       <div class="eye l"></div><div class="eye r"></div>
     </div>
