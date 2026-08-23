@@ -19,46 +19,44 @@
   }
   .bubble.show { opacity: 1; }
 
-  /* 桌宠: 44x44 适配 45x45dp 视口 */
+  /* ===== 桌宠形象 ===== */
   .pet {
-    position: relative; width: 44px; height: 44px;
+    position: relative; width: 68px; height: 36px;
     animation: idle 2.5s ease-in-out infinite;
   }
   @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
   .pet.bounce { animation: bounce .4s ease; }
   @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
 
-  /* 主体: 横向长方形 */
+  /* 主体：横向长方形 52×24 */
   .body {
-    position: absolute; left: 50%; top: 2px; transform: translateX(-50%);
-    width: 34px; height: 14px; background: #D2916B; border-radius: 2px;
+    position: relative;
+    width: 52px; height: 24px; background: #e67e22;
+    margin: 0 auto;
   }
-  /* 眼睛 */
-  .eye {
-    position: absolute; top: 5px; width: 6px; height: 6px; background: #2E2E2E;
-    transition: height .1s; border-radius: 1px;
-  }
-  .eye.l { left: 14px; } .eye.r { right: 14px; }
+  /* 眼睛（两只） */
+  .eye { position: absolute; width: 6px; height: 6px; background: #000; top: 6px; transition: height .1s; }
+  .eye-left { left: 10px; } .eye-right { right: 10px; }
   .pet.blink .eye { height: 2px; }
-  /* 手: 身体左右 */
-  .arm {
-    position: absolute; top: 6px; width: 8px; height: 10px; background: #D2916B; border-radius: 2px;
-  }
-  .arm.l { left: 4px; } .arm.r { right: 4px; }
-  /* 腿: 身体下方 */
-  .leg {
-    position: absolute; top: 16px; width: 10px; height: 12px; background: #D2916B; border-radius: 2px;
-  }
-  .leg.l { left: 18px; } .leg.r { right: 18px; }
+  /* 手：左右对称，垂直紧贴身体两侧 */
+  .arm { position: absolute; width: 8px; height: 16px; background: #e67e22; top: 6px; border-radius: 2px; }
+  .arm-left { left: -4px; border-top-left-radius: 4px; border-bottom-left-radius: 2px; }
+  .arm-right { right: -4px; border-top-right-radius: 4px; border-bottom-right-radius: 2px; }
+  /* 腿：两条，分开在下方 */
+  .leg { position: absolute; width: 8px; height: 12px; background: #d35400; bottom: -12px; border-radius: 0 0 4px 4px; }
+  .leg-left { left: 10px; } .leg-right { right: 10px; }
 </style>
 </head>
 <body>
   <div class="pet" id="pet">
     <span class="bubble" id="bubble"></span>
-    <div class="arm l"></div><div class="arm r"></div>
-    <div class="leg l"></div><div class="leg r"></div>
     <div class="body">
-      <div class="eye l"></div><div class="eye r"></div>
+      <div class="eye eye-left"></div>
+      <div class="eye eye-right"></div>
+      <div class="arm arm-left"></div>
+      <div class="arm arm-right"></div>
+      <div class="leg leg-left"></div>
+      <div class="leg leg-right"></div>
     </div>
   </div>
 
