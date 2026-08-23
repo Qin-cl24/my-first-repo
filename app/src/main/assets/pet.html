@@ -21,18 +21,18 @@
 
   /* ===== 桌宠形象 ===== */
   .pet {
-    position: relative; width: 68px; height: 36px;
+    position: relative; width: 68px; height: 42px;
     animation: idle 2.5s ease-in-out infinite;
   }
   @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
   .pet.bounce { animation: bounce .4s ease; }
   @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
 
-  /* 主体：横向长方形 52×24 */
+  /* 主体：横向长方形 52×24（下移给头顶气泡让位） */
   .body {
     position: relative;
     width: 52px; height: 24px; background: #e67e22;
-    margin: 0 auto;
+    margin: 12px auto 0;
   }
   /* 眼睛（两只） */
   .eye { position: absolute; width: 6px; height: 6px; background: #000; top: 6px; transition: height .1s; }
