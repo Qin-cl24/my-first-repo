@@ -8,7 +8,6 @@
   html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
   body { display: flex; align-items: flex-end; justify-content: center; }
 
-  /* 气泡 */
   .bubble {
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
     background: rgba(255,255,255,.95); color: #333; padding: 2px 6px;
@@ -20,40 +19,40 @@
   .bubble.show { opacity: 1; }
 
   .pet {
-    position: relative; width: 56px; height: 64px;
+    position: relative; width: 56px; height: 76px;
     animation: idle 2.5s ease-in-out infinite;
   }
   @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
   .pet.bounce { animation: bounce .4s ease; }
   @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
 
-  /* 主体方块 */
+  /* 主体: 长方形 */
   .body {
-    position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
-    width: 36px; height: 32px; background: #D2916B;
+    position: absolute; left: 50%; top: 2px; transform: translateX(-50%);
+    width: 32px; height: 44px; background: #D2916B;
     border-radius: 3px;
   }
 
-  /* 眼睛: 两个黑色小方块 */
+  /* 眼睛: 主体上部 */
   .eye {
-    position: absolute; top: 9px; width: 7px; height: 7px; background: #2E2E2E;
+    position: absolute; top: 12px; width: 7px; height: 7px; background: #2E2E2E;
     transition: height .1s;
   }
-  .eye.l { left: 8px; }
-  .eye.r { right: 8px; }
+  .eye.l { left: 7px; }
+  .eye.r { right: 7px; }
   .pet.blink .eye { height: 2px; }
 
-  /* 手: 左右同色系 */
+  /* 手: 主体中下部, 紧贴身体 */
   .arm {
-    position: absolute; top: 14px; width: 7px; height: 9px; background: #D2916B;
+    position: absolute; top: 30px; width: 7px; height: 12px; background: #D2916B;
     border-radius: 2px;
   }
-  .arm.l { left: 2px; }
-  .arm.r { right: 2px; }
+  .arm.l { left: 6px; }
+  .arm.r { right: 6px; }
 
-  /* 腿: 方块下方同色系 */
+  /* 腿: 与身体底部相连, 无缝隙 */
   .leg {
-    position: absolute; top: 40px; width: 9px; height: 10px; background: #D2916B;
+    position: absolute; top: 46px; width: 9px; height: 12px; background: #D2916B;
     border-radius: 2px;
   }
   .leg.l { left: 12px; }
@@ -61,8 +60,8 @@
 
   /* 影子 */
   .shadow {
-    position: absolute; top: 53px; left: 50%; transform: translateX(-50%);
-    width: 30px; height: 4px; background: rgba(70,70,70,.3);
+    position: absolute; top: 62px; left: 50%; transform: translateX(-50%);
+    width: 28px; height: 4px; background: rgba(70,70,70,.3);
     border-radius: 4px;
   }
 </style>
@@ -93,7 +92,6 @@
     pet.classList.remove('bounce'); void pet.offsetWidth; pet.classList.add('bounce');
   }
 
-  // 眨眼
   setInterval(() => {
     pet.classList.add('blink');
     setTimeout(() => pet.classList.remove('blink'), 130);
