@@ -8,55 +8,48 @@
   html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
   body { display: flex; align-items: flex-end; justify-content: center; }
 
+  /* 气泡 (窗口顶部) */
   .bubble {
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-    background: rgba(255,255,255,.95); color: #333; padding: 2px 6px;
-    border-radius: 8px; font-size: 9px; white-space: nowrap;
-    box-shadow: 0 1px 4px rgba(0,0,0,.25); opacity: 0; transition: opacity .3s;
-    max-width: 40px; overflow: hidden; text-overflow: ellipsis;
+    background: rgba(255,255,255,.95); color: #333; padding: 1px 4px;
+    border-radius: 6px; font-size: 8px; white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25); opacity: 0; transition: opacity .3s;
+    max-width: 42px; overflow: hidden; text-overflow: ellipsis;
     z-index: 10; pointer-events: none;
   }
   .bubble.show { opacity: 1; }
 
+  /* 桌宠: 44x44 适配 45x45dp 视口 */
   .pet {
-    position: relative; width: 68px; height: 56px;
+    position: relative; width: 44px; height: 44px;
     animation: idle 2.5s ease-in-out infinite;
   }
-  @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
   .pet.bounce { animation: bounce .4s ease; }
-  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
 
-  /* 主体: 横向长方形 (左右宽 52, 上下扁 24) */
+  /* 主体: 横向长方形 */
   .body {
     position: absolute; left: 50%; top: 2px; transform: translateX(-50%);
-    width: 52px; height: 24px; background: #D2916B;
-    border-radius: 3px;
+    width: 34px; height: 14px; background: #D2916B; border-radius: 2px;
   }
-
-  /* 眼睛: 主体上部 */
+  /* 眼睛 */
   .eye {
     position: absolute; top: 5px; width: 6px; height: 6px; background: #2E2E2E;
-    transition: height .1s;
+    transition: height .1s; border-radius: 1px;
   }
-  .eye.l { left: 14px; }
-  .eye.r { right: 14px; }
+  .eye.l { left: 14px; } .eye.r { right: 14px; }
   .pet.blink .eye { height: 2px; }
-
-  /* 手: 主体左右两侧, 同色系, 与身体相连 */
+  /* 手: 身体左右 */
   .arm {
-    position: absolute; top: 6px; width: 8px; height: 10px; background: #D2916B;
-    border-radius: 2px;
+    position: absolute; top: 6px; width: 8px; height: 10px; background: #D2916B; border-radius: 2px;
   }
-  .arm.l { left: 4px; }
-  .arm.r { right: 4px; }
-
-  /* 腿: 主体下方, 与身体底部相连 */
+  .arm.l { left: 4px; } .arm.r { right: 4px; }
+  /* 腿: 身体下方 */
   .leg {
-    position: absolute; top: 26px; width: 10px; height: 12px; background: #D2916B;
-    border-radius: 2px;
+    position: absolute; top: 16px; width: 10px; height: 12px; background: #D2916B; border-radius: 2px;
   }
-  .leg.l { left: 18px; }
-  .leg.r { right: 18px; }
+  .leg.l { left: 18px; } .leg.r { right: 18px; }
 </style>
 </head>
 <body>
@@ -77,40 +70,26 @@
     bubble.textContent = text;
     bubble.classList.add('show');
     clearTimeout(say._t);
-    say._t = setTimeout(() => bubble.classList.remove('show'), ms || 1800);
+    say._t = setTimeout(() => bubble.classList.remove('show'), ms || 1600);
   }
-
   function bounce() {
     pet.classList.remove('bounce'); void pet.offsetWidth; pet.classList.add('bounce');
   }
-
   setInterval(() => {
     pet.classList.add('blink');
     setTimeout(() => pet.classList.remove('blink'), 130);
   }, 3000);
 
   window.petEngine = {
-    onTap: function() {
-      const msgs = ['嗨~', '主人!', '(・ω・)', '在呢'];
-      say(msgs[Math.floor(Math.random() * msgs.length)]);
-    },
-    onDoubleTap: function() {
-      bounce();
-      say('嘿嘿!');
-    },
-    onLongPress: function() {
-      say('唔...');
-    },
-    onDragEnd: function() {
-      say('嘿咻~');
-    },
-    onFling: function() {
-      say('哇——!');
-    }
+    onTap: function() { say(['嗨~','主人!','在呢'][Math.floor(Math.random()*3)]); },
+    onDoubleTap: function() { bounce(); say('嘿嘿!'); },
+    onLongPress: function() { say('唔...'); },
+    onDragEnd: function() { say('嘿咻~'); },
+    onFling: function() { say('哇!'); }
   };
 
   pet.addEventListener('click', () => window.petEngine.onTap());
-  say('你好呀!', 2500);
+  say('你好呀!', 2200);
 </script>
 </body>
 </html>
