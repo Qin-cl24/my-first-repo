@@ -9,16 +9,16 @@
   body { display: flex; align-items: flex-end; justify-content: center; }
 
   .pet {
-    position: relative; width: 120px; height: 150px; cursor: pointer;
+    position: relative; width: 88px; height: 105px; cursor: pointer;
     animation: idle 3s ease-in-out infinite;
   }
   @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
   .pet.bounce { animation: bounce .5s ease; }
   @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-30px) scale(1.1); } }
 
-  .head { position: relative; width: 84px; height: 68px; background: #f7b731; border-radius: 50% 50% 45% 45%; margin: 0 auto; }
-  .ear { position: absolute; top: -10px; width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 22px solid #f7b731; }
-  .ear::after { content:''; position:absolute; top:7px; left:-8px; width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent; border-bottom:13px solid #ff9ff3; }
+  .head { position: relative; width: 62px; height: 50px; background: #f7b731; border-radius: 50% 50% 45% 45%; margin: 0 auto; }
+  .ear { position: absolute; top: -10px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 16px solid #f7b731; }
+  .ear::after { content:''; position:absolute; top:7px; left:-8px; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:9px solid #ff9ff3; }
   .ear.l { left: 7px; transform: rotate(-12deg); }
   .ear.r { right: 7px; transform: rotate(12deg); }
 
@@ -42,7 +42,7 @@
   .bow { position: absolute; top: -4px; right: -12px; font-size: 1.2rem; animation: sway 2s ease-in-out infinite; transform-origin: bottom center; }
   @keyframes sway { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
 
-  .body { position: relative; width: 96px; height: 50px; background: #f7b731; border-radius: 50% 50% 45% 45%; margin: -6px auto 0; }
+  .body { position: relative; width: 70px; height: 38px; background: #f7b731; border-radius: 50% 50% 45% 45%; margin: -6px auto 0; }
   .paw { position: absolute; bottom: 0; width: 18px; height: 12px; background: #f7b731; border-radius: 50%; border: 2px solid #e1a01a; }
   .paw.l { left: 14px; } .paw.r { right: 14px; }
   .tail { position: absolute; bottom: -4px; right: -22px; width: 34px; height: 14px; background: #f7b731; border-radius: 50%; transform-origin: left center; animation: wag 1.2s ease-in-out infinite; }
@@ -50,19 +50,20 @@
   .pet.sleeping .tail { animation-duration: 3s; }
 
   .bubble {
-    position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
-    background: rgba(255,255,255,.95); color: #333; padding: 4px 10px;
-    border-radius: 12px; font-size: 11px; white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,.2); opacity: 0; transition: opacity .3s;
-    max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+    position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,.95); color: #333; padding: 3px 8px;
+    border-radius: 10px; font-size: 10px; white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25); opacity: 0; transition: opacity .3s;
+    max-width: 88px; overflow: hidden; text-overflow: ellipsis;
+    z-index: 10; pointer-events: none;
   }
   .bubble.show { opacity: 1; }
 
-  .zzz { position: absolute; top: -16px; right: 6px; color: #95a5a6; font-size: 14px; font-weight: bold; opacity: 0; }
+  .zzz { position: absolute; top: 14px; right: 10px; color: #95a5a6; font-size: 13px; font-weight: bold; opacity: 0; z-index: 10; pointer-events: none; }
   .pet.sleeping .zzz { opacity: 1; animation: floatz 2s ease-in-out infinite; }
   @keyframes floatz { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
 
-  .hearts { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); font-size: 18px; opacity: 0; pointer-events: none; }
+  .hearts { position: absolute; top: 26%; left: 50%; transform: translateX(-50%); font-size: 16px; opacity: 0; pointer-events: none; z-index: 10; }
   .pet.loved .hearts { animation: rise 1s ease-out forwards; }
   @keyframes rise { 0% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -40px) scale(1.4); } }
 </style>
@@ -142,6 +143,7 @@
   }, 10000);
 
   pet.addEventListener('click', () => window.petEngine.onTap());
+  say('喵~ 你好呀!', 2500);
 </script>
 </body>
 </html>
