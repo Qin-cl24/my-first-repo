@@ -132,6 +132,7 @@ class PetOverlayService : Service() {
             scheduleEdgeRun()
             schedulePeekaboo()
             scheduleAiWatch()
+            startLocalServer()
             Toast.makeText(this, "桌宠已上线！", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "启动失败：${e.message}", Toast.LENGTH_LONG).show()
@@ -172,6 +173,8 @@ class PetOverlayService : Service() {
     private var petH = 0
     private var petX = 0
     private var petY = 0
+    private var httpServer: java.net.ServerSocket? = null
+    private var httpThread: Thread? = null
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
@@ -536,6 +539,94 @@ class PetOverlayService : Service() {
     private fun escapeJs(s: String): String =
         "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
+    // === 本地 HTTP 服务：Agent（dsh/Codex/openclaw 等）可通过 curl 控制桌宠 ===
+    // 绑定 127.0.0.1，仅本机可访问（私密）
+    private fun startLocalServer() {
+        if (!prefBool("pref_local_http", true)) return
+        try {
+            httpServer = java.net.ServerSocket(9001, 8, java.net.InetAddress.getByName("127.0.0.1"))
+            httpThread = Thread {
+                while (!Thread.currentThread().isInterrupted) {
+                    try {
+                        val socket = httpServer?.accept() ?: break
+                        Thread {
+                            try {
+                                handleSocket(socket)
+                            } catch (e: Exception) {
+                            } finally {
+                                try { socket.close() } catch (e: Exception) {}
+                            }
+                        }.start()
+                    } catch (e: Exception) {
+                        break
+                    }
+                }
+            }.apply { isDaemon = true; start() }
+        } catch (e: Exception) {
+            // 端口被占等，静默
+        }
+    }
+
+    private fun handleSocket(socket: java.net.Socket) {
+        val reader = socket.getInputStream().bufferedReader()
+        val requestLine = reader.readLine() ?: return
+        val parts = requestLine.split(" ")
+        if (parts.size < 2) return
+        val method = parts[0]
+        val path = parts[1]
+        var line = reader.readLine()
+        var contentLength = 0
+        while (line != null && line.isNotEmpty()) {
+            if (line.lowercase().startsWith("content-length:")) {
+                contentLength = line.substringAfter(":").trim().toIntOrNull() ?: 0
+            }
+            line = reader.readLine()
+        }
+        val body = if (contentLength > 0) {
+            CharArray(contentLength).also { reader.read(it) }.concatToString()
+        } else ""
+
+        var status = "200 OK"
+        var resp: String
+        when {
+            (method == "POST") && (path == "/say" || path == "/message") -> {
+                val (text, action) = parseSayBody(body)
+                val msg = if (action.isNotEmpty()) "$action|$text" else text
+                aiHandler.post { handleAiMessage(msg) }
+                resp = """{"ok":true}"""
+            }
+            (method == "GET") && path == "/status" -> {
+                resp = """{"ok":true,"status":"running","port":9001}"""
+            }
+            else -> {
+                status = "404 Not Found"
+                resp = """{"ok":false,"error":"not found"}"""
+            }
+        }
+        val payload = resp.toByteArray()
+        val out = socket.getOutputStream()
+        out.write(
+            "HTTP/1.1 $status\r\nContent-Type: application/json\r\nContent-Length: ${payload.size}\r\nConnection: close\r\n\r\n".toByteArray()
+        )
+        out.write(payload)
+        out.flush()
+    }
+
+    private fun parseSayBody(body: String): Pair<String, String> {
+        return try {
+            val j = org.json.JSONObject(body)
+            j.optString("text", "") to j.optString("action", "")
+        } catch (e: Exception) {
+            val text = java.net.URLDecoder.decode(
+                Regex("text=([^&]*)").find(body)?.groupValues?.get(1).orEmpty(), "UTF-8"
+            )
+            val action = java.net.URLDecoder.decode(
+                Regex("action=([^&]*)").find(body)?.groupValues?.get(1).orEmpty(), "UTF-8"
+            )
+            text to action
+        }
+    }
+
     private val screenW get() = resources.displayMetrics.widthPixels
     private val screenH get() = resources.displayMetrics.heightPixels
 
@@ -642,6 +733,11 @@ class PetOverlayService : Service() {
         aiHandler.removeCallbacksAndMessages(null)
         hideHandler.removeCallbacksAndMessages(null)
         edgeAnimator?.cancel()
+        try {
+            httpServer?.close()
+        } catch (e: Exception) {
+        }
+        httpThread?.interrupt()
         overlayView?.let {
             windowManager?.removeView(it)
             it.destroy()

@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity() {
         bindSwitch(R.id.sw_water, "pref_water", true)
         bindSwitch(R.id.sw_keyboard, "pref_keyboard", true)
         bindSwitch(R.id.sw_ai, "pref_ai_channel", true)
+        bindSwitch(R.id.sw_http, "pref_local_http", true)
 
         // AI 服务配置（可空 = 不连任何 AI，保护私有）
         val etUrl = findViewById<EditText>(R.id.et_ai_url)
