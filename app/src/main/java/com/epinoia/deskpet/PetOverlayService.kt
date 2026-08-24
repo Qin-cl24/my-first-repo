@@ -38,6 +38,7 @@ class PetOverlayService : Service() {
         private const val DOCK_EDGE_MARGIN_DP = 16       // 贴边时留在屏内的边缘(可触摸拉回)
         private const val DOCKED_ALPHA = 0.5f            // 贴边半透明度
         private const val DOCK_ANIM_MS = 300L
+        private const val LONELY_INTERVAL_MS = 5 * 60 * 1000L  // 孤独递进每 5 分钟一级
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -104,6 +105,7 @@ class PetOverlayService : Service() {
         try {
             windowManager?.addView(overlayView, params)
             resetIdleTimer()
+            resetLonelyTimer()
             Toast.makeText(this, "桌宠已上线！", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "启动失败：${e.message}", Toast.LENGTH_LONG).show()
@@ -122,14 +124,21 @@ class PetOverlayService : Service() {
     private var hasMoved = false
     private var docked = false
     private var dockSide = -1
+    private var tapCount = 0
+    private var firstTapTime = 0L
+    private var lonelyStage = 0
     private val handler = Handler(Looper.getMainLooper())
     private val idleRunnable = Runnable { dockToEdge() }
+    private val lonelyRunnable = Runnable { advanceLoneliness() }
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     if (docked) undock()
+                    // 任何互动都唤醒 + 重置孤独进度
+                    overlayView?.evaluateJavascript("window.wakeUp && window.wakeUp()", null)
+                    resetLonelyTimer()
                     initialX = params?.x ?: 0
                     initialY = params?.y ?: 0
                     initialTouchX = event.rawX
@@ -157,12 +166,21 @@ class PetOverlayService : Service() {
                     resetIdleTimer()
                     val elapsed = System.currentTimeMillis() - touchStartTime
                     if (!hasMoved) {
+                        val now = System.currentTimeMillis()
                         when {
-                            elapsed > LONG_PRESS_TIMEOUT -> onLongPress()
-                            System.currentTimeMillis() - lastTapTime < DOUBLE_TAP_TIMEOUT -> onDoubleTap()
+                            elapsed > LONG_PRESS_TIMEOUT -> { tapCount = 0; onLongPress() }
                             else -> {
-                                lastTapTime = System.currentTimeMillis()
-                                onTap()
+                                // 连击计数：2 秒窗口内累计 3/5/8 次触发递进反应
+                                if (now - firstTapTime > 2000) { tapCount = 0; firstTapTime = now }
+                                if (tapCount == 0) firstTapTime = now
+                                tapCount++
+                                when (tapCount) {
+                                    2 -> onDoubleTap()
+                                    3 -> onCombo3()
+                                    5 -> onCombo5()
+                                    8 -> { onCombo8(); tapCount = 0 }
+                                    else -> onTap()
+                                }
                             }
                         }
                     } else {
@@ -197,6 +215,34 @@ class PetOverlayService : Service() {
 
     private fun onFling() {
         overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onFling()", null)
+    }
+
+    private fun onCombo3() {
+        overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onCombo3()", null)
+    }
+
+    private fun onCombo5() {
+        overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onCombo5()", null)
+    }
+
+    private fun onCombo8() {
+        overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onCombo8()", null)
+    }
+
+    // === 孤独递进：无互动 5/10/15/20 分钟 → 偷看/吹泡泡/打瞌睡/睡着 ===
+    private fun resetLonelyTimer() {
+        lonelyStage = 0
+        handler.removeCallbacks(lonelyRunnable)
+        handler.postDelayed(lonelyRunnable, LONELY_INTERVAL_MS)
+    }
+
+    private fun advanceLoneliness() {
+        if (lonelyStage >= 4) return  // 已睡着，保持
+        lonelyStage++
+        overlayView?.evaluateJavascript(
+            "window.petEngine && window.petEngine.onLonely$lonelyStage()", null
+        )
+        if (lonelyStage < 4) handler.postDelayed(lonelyRunnable, LONELY_INTERVAL_MS)
     }
 
     private val screenW get() = resources.displayMetrics.widthPixels
@@ -252,6 +298,7 @@ class PetOverlayService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(idleRunnable)
+        handler.removeCallbacks(lonelyRunnable)
         overlayView?.let {
             windowManager?.removeView(it)
             it.destroy()

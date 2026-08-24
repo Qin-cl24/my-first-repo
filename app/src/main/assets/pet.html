@@ -55,6 +55,7 @@
   .fx-star  { top: -6px; left: 46px; }
   .fx-zzz   { top: -9px; left: 42px; font-size: 7px; }
   .fx-smoke { top: -9px; left: 8px; }
+  .fx-bubble { top: 6px; left: 6px; font-size: 7px; }
 
   /* 动作表情 */
   .act-happy .eye { height: 2px; border-radius: 50%; }
@@ -73,6 +74,8 @@
   @keyframes proudbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
   .act-wiggle { animation: wiggle .5s ease-in-out 4; }
   @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+  /* 睡着 */
+  .pet.asleep { opacity: .65; animation: none; }
 </style>
 </head>
 <body>
@@ -84,6 +87,7 @@
     <span class="fx fx-star">✨</span>
     <span class="fx fx-zzz">zZz</span>
     <span class="fx fx-smoke">💢</span>
+    <span class="fx fx-bubble">🫧</span>
     <div class="body">
       <div class="eye eye-left"></div>
       <div class="eye eye-right"></div>
@@ -113,14 +117,66 @@
   }, 3000);
 
   window.petEngine = {
-    onTap: function() { say(['嗨~','主人!','在呢'][Math.floor(Math.random()*3)]); },
+    onTap: function() {
+      if (waterLv > 0) { waterLv = 0; say('咕嘟咕嘟... 喝了！💧'); return; }
+      randomSay(GREETS[PERIOD]);
+    },
     onDoubleTap: function() { bounce(); say('嘿嘿!'); },
     onLongPress: function() { say('唔...'); },
     onDragEnd: function() { say('嘿咻~'); },
-    onFling: function() { say('哇!'); }
+    onFling: function() { say('哇!'); },
+    // 连击：2秒内连戳 3/5/8 次，层层递进
+    onCombo3: function() {
+      say('三连击！嘿嘿~');
+      pet.classList.add('act-happy');
+      setTimeout(function() { pet.classList.remove('act-happy'); }, 1200);
+    },
+    onCombo5: function() { say('五连击！！哇哦'); bounce(); },
+    onCombo8: function() {
+      say('八连击！！要被戳坏了🌚');
+      pet.classList.add('act-angry');
+      var s = document.querySelector('.fx-smoke'); if (s) s.classList.add('show');
+      setTimeout(function() { pet.classList.remove('act-angry'); clearFx(); }, 1500);
+    },
+    // 孤独递进：5/10/15/20分钟无互动
+    onLonely1: function() { say('(偷偷看你一眼)'); pet.classList.add('act-wiggle'); setTimeout(function() { pet.classList.remove('act-wiggle'); }, 1500); },
+    onLonely2: function() { say('呼~呼~'); var b = document.querySelector('.fx-bubble'); if (b) b.classList.add('show'); setTimeout(function() { if (b) b.classList.remove('show'); }, 3000); },
+    onLonely3: function() { pet.classList.add('act-sleepy'); say('zZz... 好困'); },
+    onLonely4: function() { pet.classList.add('asleep'); say('(睡熟了...)'); }
   };
 
+  // 互动时唤醒
+  function wakeUp() {
+    pet.classList.remove('asleep', 'act-sleepy');
+    clearFx();
+  }
+
   pet.addEventListener('click', () => window.petEngine.onTap());
+
+  // ===== 时段感知：按小时换说话风格 =====
+  var PERIOD = (function(h) {
+    if (h >= 0 && h < 6) return 'lateNight';
+    if (h >= 6 && h < 9) return 'morning';
+    if (h >= 11 && h < 14) return 'noon';
+    if (h >= 22) return 'night';
+    return 'day';
+  })(new Date().getHours());
+  var GREETS = {
+    lateNight: ['都这么晚了还不睡吗🌙','熬夜对身体不好哦...','快睡啦！'],
+    morning:   ['早安呀～☀️','新的一天！精神满满！','早！'],
+    noon:      ['午饭吃了吗？🍚','该吃饭啦～','饿了...'],
+    night:     ['晚上好呀～','今天辛苦啦！','夜深了哦🌙'],
+    day:       ['嗨~','主人!','在呢']
+  };
+  function randomSay(pool) { say(pool[Math.floor(Math.random() * pool.length)]); }
+
+  // ===== 喝水提醒：每2小时，越不理越凶 =====
+  var waterLv = 0;
+  var WATER_MSGS = ['该喝水啦～💧','都说了要喝水！💧💧','再不喝我就生气了！(｀へ´)','(盯着你) 水！水！'];
+  setInterval(function() {
+    waterLv++;
+    say(WATER_MSGS[(waterLv - 1) % WATER_MSGS.length], 4000);
+  }, 2 * 60 * 60 * 1000);
 
   // ===== 自主小动作：参考相册表情图，随机自觉做 =====
   var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle'];
@@ -137,6 +193,7 @@
     document.querySelectorAll('.fx').forEach(function(el) { el.classList.remove('show'); });
   }
   function runAction() {
+    if (pet.classList.contains('asleep')) return;
     pet.classList.remove('blink');
     ACTIONS.forEach(function(a) { pet.classList.remove('act-' + a); });
     clearFx();
@@ -157,7 +214,7 @@
     setTimeout(schedule, 5000 + Math.random() * 5000); // 每 5~10 秒随机一个小动作
   }, 4000);
 
-  say('你好呀!', 2200);
+  randomSay(GREETS[PERIOD]);
 </script>
 </body>
 </html>
