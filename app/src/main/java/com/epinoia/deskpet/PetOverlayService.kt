@@ -40,6 +40,9 @@ class PetOverlayService : Service() {
         private const val DOCKED_ALPHA = 0.5f            // 贴边半透明度
         private const val DOCK_ANIM_MS = 300L
         private const val LONELY_INTERVAL_MS = 5 * 60 * 1000L  // 孤独递进每 5 分钟一级
+        private const val HANDLE_W_DP = 26                    // 完全隐藏后的边缘手柄宽度
+        private const val HANDLE_H_DP = 52                    // 手柄高度
+        private const val HIDE_DELAY_MS = 60_000L             // 贴边后多久完全隐藏成手柄
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -162,11 +165,29 @@ class PetOverlayService : Service() {
     private val aiHandler = Handler(Looper.getMainLooper())
     private var aiLastContent = ""
     private var aiLinkLast = ""
+    private val hideHandler = Handler(Looper.getMainLooper())
+    private val hideRunnable = Runnable { toHandleMode() }
+    private var hidden = false
+    private var petW = 0
+    private var petH = 0
+    private var petX = 0
+    private var petY = 0
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    hideHandler.removeCallbacks(hideRunnable)
+                    if (hidden) {
+                        // 手柄模式：点击=召唤，长按拖动=移动手柄贴边
+                        initialX = params?.x ?: 0
+                        initialY = params?.y ?: 0
+                        initialTouchX = event.rawX
+                        initialTouchY = event.rawY
+                        touchStartTime = System.currentTimeMillis()
+                        hasMoved = false
+                        return@OnTouchListener true
+                    }
                     if (docked) undock()
                     // 任何互动都唤醒 + 重置孤独进度 + 打断/重置边缘跑
                     overlayView?.evaluateJavascript("window.wakeUp && window.wakeUp()", null)
@@ -184,6 +205,16 @@ class PetOverlayService : Service() {
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    if (hidden) {
+                        // 手柄拖动（跟手移动）
+                        params?.let { p ->
+                            p.x = initialX + (event.rawX - initialTouchX).toInt()
+                            p.y = initialY + (event.rawY - initialTouchY).toInt()
+                            windowManager?.updateViewLayout(overlayView, p)
+                        }
+                        hasMoved = true
+                        return@OnTouchListener true
+                    }
                     val dx = (event.rawX - initialTouchX).toInt()
                     val dy = (event.rawY - initialTouchY).toInt()
                     if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
@@ -198,6 +229,11 @@ class PetOverlayService : Service() {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    if (hidden) {
+                        if (!hasMoved) toPetMode()  // 点击手柄 → 召唤桌宠
+                        else snapHandle()           // 拖动结束 → 贴最近边缘
+                        return@OnTouchListener true
+                    }
                     resetIdleTimer()
                     val elapsed = System.currentTimeMillis() - touchStartTime
                     if (!hasMoved) {
@@ -291,6 +327,7 @@ class PetOverlayService : Service() {
     }
 
     private fun edgeRun() {
+        hideHandler.removeCallbacks(hideRunnable)
         val p = params ?: return
         overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onEdgeRun()", null)
         // 跑动时恢复不透明
@@ -375,6 +412,7 @@ class PetOverlayService : Service() {
     }
 
     private fun peekaboo() {
+        hideHandler.removeCallbacks(hideRunnable)
         val p = params ?: return
         // 先淡出消失
         animateAlpha(0f, 250L) {
@@ -491,6 +529,7 @@ class PetOverlayService : Service() {
         else
             "window.petEngine && window.petEngine.onAiSay(${escapeJs(text)}, 'none')"
         overlayView?.evaluateJavascript(js, null)
+        hideHandler.removeCallbacks(hideRunnable)
         if (docked) undock()  // 说话时弹出来刷存在感
     }
 
@@ -518,6 +557,50 @@ class PetOverlayService : Service() {
         dockSide = if (nearLeft) -1 else 1
         docked = true
         animateTo(targetX, DOCKED_ALPHA)
+        // 贴边后一段时间无互动 → 完全隐藏成边缘手柄
+        hideHandler.removeCallbacks(hideRunnable)
+        hideHandler.postDelayed(hideRunnable, HIDE_DELAY_MS)
+    }
+
+    // === 完全隐藏：缩小成边缘半透明手柄（点击召唤 / 长按拖动贴边） ===
+    private fun toHandleMode() {
+        if (hidden || !docked) return
+        val p = params ?: return
+        petW = p.width; petH = p.height
+        petX = p.x; petY = p.y
+        p.width = dpToPx(HANDLE_W_DP)
+        p.height = dpToPx(HANDLE_H_DP)
+        val nearLeft = petX < (screenW - petW) / 2
+        p.x = if (nearLeft) 0 else screenW - p.width
+        p.y = ((screenH - p.height) / 2).coerceIn(0, screenH - p.height)
+        p.alpha = 1f
+        hidden = true
+        overlayView?.let { windowManager?.updateViewLayout(it, p) }
+        overlayView?.evaluateJavascript("window.showHandle && showHandle($nearLeft)", null)
+    }
+
+    private fun toPetMode() {
+        if (!hidden) return
+        val p = params ?: return
+        p.width = petW; p.height = petH
+        p.x = petX.coerceIn(0, screenW - p.width)
+        p.y = petY.coerceIn(0, screenH - p.height)
+        p.alpha = 1f
+        hidden = false
+        overlayView?.let { windowManager?.updateViewLayout(it, p) }
+        overlayView?.evaluateJavascript("window.showPet && showPet()", null)
+        docked = false
+        resetIdleTimer()
+        resetLonelyTimer()
+    }
+
+    private fun snapHandle() {
+        val p = params ?: return
+        val nearLeft = p.x < (screenW - p.width) / 2
+        p.x = if (nearLeft) 0 else screenW - p.width
+        p.y = p.y.coerceIn(0, screenH - p.height)
+        overlayView?.let { windowManager?.updateViewLayout(it, p) }
+        overlayView?.evaluateJavascript("window.showHandle && showHandle($nearLeft)", null)
     }
 
     private fun undock() {
@@ -557,6 +640,7 @@ class PetOverlayService : Service() {
         edgeRunHandler.removeCallbacksAndMessages(null)
         peekabooHandler.removeCallbacksAndMessages(null)
         aiHandler.removeCallbacksAndMessages(null)
+        hideHandler.removeCallbacksAndMessages(null)
         edgeAnimator?.cancel()
         overlayView?.let {
             windowManager?.removeView(it)

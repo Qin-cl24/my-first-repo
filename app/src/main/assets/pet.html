@@ -98,11 +98,23 @@
   @keyframes crouch { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.8) translateY(3px); } }
   /* 睡着 */
   .pet.asleep { opacity: .65; animation: none; }
+  /* 完全隐藏时显示边缘手柄 */
+  .handle {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 20px; color: rgba(230, 126, 34, .55); display: none; z-index: 20;
+    line-height: 1;
+  }
+  .pet.handle-mode .body, .pet.handle-mode .fx, .pet.handle-mode .bubble { display: none; }
+  .pet.handle-mode .handle { display: block; }
+  /* 翻滚动作 */
+  .act-roll { animation: roll .6s ease 1; }
+  @keyframes roll { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
   <div class="pet" id="pet">
     <span class="bubble" id="bubble"></span>
+    <span class="handle" id="handle">❯</span>
     <span class="fx fx-heart">❤</span>
     <span class="fx fx-tear">💧</span>
     <span class="fx fx-tear r">💧</span>
@@ -220,6 +232,15 @@
     try { return window.AndroidBridge ? AndroidBridge.getPref(key, def) : def; } catch (e) { return def; }
   }
 
+  // 完全隐藏模式：显示边缘手柄（原生层缩小窗口后调用）
+  function showHandle(left) {
+    pet.classList.add('handle-mode');
+    document.getElementById('handle').textContent = left ? '❯' : '❮';
+  }
+  function showPet() {
+    pet.classList.remove('handle-mode');
+  }
+
   pet.addEventListener('click', () => window.petEngine.onTap());
 
   // ===== 时段感知：按小时换说话风格 =====
@@ -250,7 +271,7 @@
   }
 
   // ===== 自主小动作：参考相册表情图，随机自觉做 =====
-  var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle','music','shock','think','celebrate','cute','run'];
+  var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle','music','shock','think','celebrate','cute','run','roll'];
   var FX = {
     happy: ['.fx-heart'],
     sleepy: ['.fx-zzz'],
@@ -264,7 +285,8 @@
     think: ['.fx-question'],
     celebrate: ['.fx-confetti.c1', '.fx-confetti.c2', '.fx-confetti.c3'],
     cute: ['.fx-heart'],
-    run: []
+    run: [],
+    roll: []
   };
   function clearFx() {
     document.querySelectorAll('.fx').forEach(function(el) { el.classList.remove('show'); });
