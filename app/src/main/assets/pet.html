@@ -35,7 +35,7 @@
     margin: 12px auto 0;
   }
   /* 眼睛（两只） */
-  .eye { position: absolute; width: 6px; height: 6px; background: #000; top: 6px; transition: height .1s, transform .15s, border-radius .15s; }
+  .eye { position: absolute; width: 6px; height: 6px; background: #000; top: 6px; transition: height .1s, width .15s, transform .15s, border-radius .15s; }
   .eye-left { left: 10px; } .eye-right { right: 10px; }
   .pet.blink .eye { height: 2px; }
   /* 手：小正方形、与身体同色、垂直居中、紧贴身体两侧无缝隙 */
@@ -61,6 +61,12 @@
   .fx-note.n1 { top: -6px; left: 6px; animation-delay: .1s; }
   .fx-note.n2 { top: 0px;  left: 58px; animation-delay: .35s; }
   .fx-note.n3 { top: -10px; left: 38px; animation-delay: .6s; }
+  .fx-exclaim { top: -8px; left: 30px; font-size: 11px; color: #e53935; font-weight: bold; }
+  .fx-question { top: -10px; left: 30px; font-size: 10px; color: #666; font-weight: bold; }
+  .fx-confetti { font-size: 8px; }
+  .fx-confetti.c1 { top: -4px; left: 4px; animation-delay: 0s; }
+  .fx-confetti.c2 { top: -2px; left: 56px; animation-delay: .2s; }
+  .fx-confetti.c3 { top: -8px; left: 30px; animation-delay: .4s; }
 
   /* 动作表情 */
   .act-happy .eye { height: 2px; border-radius: 50%; }
@@ -80,6 +86,13 @@
   .act-wiggle { animation: wiggle .5s ease-in-out 4; }
   @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
   .act-music { animation: wiggle .45s ease-in-out 6; }
+  .act-shock { animation: bounce .35s ease 2; }
+  .act-think { animation: thinkbob 1s ease-in-out infinite; }
+  @keyframes thinkbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  .act-celebrate { animation: wiggle .3s ease-in-out 6; }
+  .act-cute .eye { width: 8px; height: 8px; border-radius: 50%; }
+  .act-run { animation: run .15s linear infinite; }
+  @keyframes run { 0%,100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-1px) rotate(-4deg); } 75% { transform: translateY(1px) rotate(4deg); } }
   /* 睡着 */
   .pet.asleep { opacity: .65; animation: none; }
 </style>
@@ -98,6 +111,11 @@
     <span class="fx fx-note n1">♪</span>
     <span class="fx fx-note n2">♫</span>
     <span class="fx fx-note n3">♪</span>
+    <span class="fx fx-exclaim">!</span>
+    <span class="fx fx-question">?</span>
+    <span class="fx fx-confetti c1">🎉</span>
+    <span class="fx fx-confetti c2">🎊</span>
+    <span class="fx fx-confetti c3">✨</span>
     <div class="body">
       <div class="eye eye-left"></div>
       <div class="eye eye-right"></div>
@@ -201,7 +219,7 @@
   }, 2 * 60 * 60 * 1000);
 
   // ===== 自主小动作：参考相册表情图，随机自觉做 =====
-  var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle','music'];
+  var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle','music','shock','think','celebrate','cute','run'];
   var FX = {
     happy: ['.fx-heart'],
     sleepy: ['.fx-zzz'],
@@ -210,7 +228,12 @@
     proud: ['.fx-star'],
     jump: [],
     wiggle: [],
-    music: ['.fx-music', '.fx-note.n1', '.fx-note.n2', '.fx-note.n3']
+    music: ['.fx-music', '.fx-note.n1', '.fx-note.n2', '.fx-note.n3'],
+    shock: ['.fx-exclaim'],
+    think: ['.fx-question'],
+    celebrate: ['.fx-confetti.c1', '.fx-confetti.c2', '.fx-confetti.c3'],
+    cute: ['.fx-heart'],
+    run: []
   };
   function clearFx() {
     document.querySelectorAll('.fx').forEach(function(el) { el.classList.remove('show'); });
