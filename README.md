@@ -36,9 +36,7 @@
 
 | 版本 | 亮点 |
 |------|------|
-| [v1.11.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.11.0) | ⭐ 5 个新动作：惊吓!/思考?/庆祝🎉/撒娇/小跑（动作池 13 种）（当前最新） |
-| [v1.10.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.10.0) | 动作弹出（贴边时做动作会弹出来）+ 躲猫猫（随机消失→随机位置现身） |
-| [v1.9.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.9.0) | 边缘跑（随机沿屏幕边缘滑跑）+ 听歌自嗨（🎧摇摆+音符） |
+| [v1.11.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.11.0) | ⭐ 交互行为增强包（合并版）：边缘跑 / 听歌自嗨 / 动作弹出 / 躲猫猫 / 惊吓·思考·庆祝·撒娇·小跑，动作池 13 种（当前最新） |
 | [v1.8.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.8.0) | 4 大新功能：连击计数 / 时段感知 / 孤独递进 / 喝水提醒 |
 | [v1.7.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.7.0) | 自主小动作系统 |
 | [v1.6.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.6.0) | 悬浮球：自动贴边半透明、防拖丢 |
