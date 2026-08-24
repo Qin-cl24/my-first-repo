@@ -29,8 +29,8 @@ class PetOverlayService : Service() {
     companion object {
         private const val CHANNEL_ID = "deskpet_overlay"
         private const val NOTIFICATION_ID = 1
-        private const val PET_WIDTH_DP = 64
-        private const val PET_HEIGHT_DP = 64
+        private const val PET_WIDTH_DP = 72
+        private const val PET_HEIGHT_DP = 72
         private const val DOUBLE_TAP_TIMEOUT = 300L
         private const val LONG_PRESS_TIMEOUT = 600L
         private const val MOVE_THRESHOLD = 10
@@ -106,6 +106,7 @@ class PetOverlayService : Service() {
             windowManager?.addView(overlayView, params)
             resetIdleTimer()
             resetLonelyTimer()
+            scheduleEdgeRun()
             Toast.makeText(this, "桌宠已上线！", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "启动失败：${e.message}", Toast.LENGTH_LONG).show()
@@ -130,15 +131,19 @@ class PetOverlayService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val idleRunnable = Runnable { dockToEdge() }
     private val lonelyRunnable = Runnable { advanceLoneliness() }
+    private val edgeRunHandler = Handler(Looper.getMainLooper())
+    private var edgeAnimator: ValueAnimator? = null
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     if (docked) undock()
-                    // 任何互动都唤醒 + 重置孤独进度
+                    // 任何互动都唤醒 + 重置孤独进度 + 打断/重置边缘跑
                     overlayView?.evaluateJavascript("window.wakeUp && window.wakeUp()", null)
                     resetLonelyTimer()
+                    edgeAnimator?.cancel()
+                    scheduleEdgeRun()
                     initialX = params?.x ?: 0
                     initialY = params?.y ?: 0
                     initialTouchX = event.rawX
@@ -245,6 +250,77 @@ class PetOverlayService : Service() {
         if (lonelyStage < 4) handler.postDelayed(lonelyRunnable, LONELY_INTERVAL_MS)
     }
 
+    // === 边缘跑：随机沿屏幕边缘滑跑一段，然后贴边 ===
+    private fun scheduleEdgeRun() {
+        edgeRunHandler.removeCallbacksAndMessages(null)
+        edgeRunHandler.postDelayed({
+            edgeRun()
+            scheduleEdgeRun()
+        }, 30000L + (Math.random() * 30000L).toLong())  // 30~60 秒随机
+    }
+
+    private fun edgeRun() {
+        val p = params ?: return
+        overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onEdgeRun()", null)
+        // 跑动时恢复不透明
+        p.alpha = 1f
+        overlayView?.let { windowManager?.updateViewLayout(it, p) }
+        val w = p.width
+        val edge = dpToPx(DOCK_EDGE_MARGIN_DP)
+        val nearLeft = p.x < (screenW - w) / 2
+        val edgeX = if (nearLeft) -w + edge else screenW - edge
+        // 1) 先跑到边缘
+        animateXTo(edgeX, 450L) {
+            // 2) 沿边缘上下跑一段
+            val toY = if (p.y < screenH / 2) screenH - p.height - dpToPx(60)
+                      else dpToPx(60)
+            animateYTo(toY, 1600L) {
+                // 3) 停住贴边半透明
+                docked = true
+                dockSide = if (nearLeft) -1 else 1
+                animateTo(p.x, DOCKED_ALPHA)
+            }
+        }
+    }
+
+    private fun animateXTo(target: Int, dur: Long, onEnd: () -> Unit = {}) {
+        val p = params ?: return
+        val start = p.x
+        edgeAnimator?.cancel()
+        edgeAnimator = ValueAnimator.ofInt(start, target).apply {
+            duration = dur
+            addUpdateListener {
+                params?.let { pr ->
+                    pr.x = it.animatedValue as Int
+                    overlayView?.let { v -> windowManager?.updateViewLayout(v, pr) }
+                }
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) { onEnd() }
+            })
+            start()
+        }
+    }
+
+    private fun animateYTo(target: Int, dur: Long, onEnd: () -> Unit = {}) {
+        val p = params ?: return
+        val start = p.y
+        edgeAnimator?.cancel()
+        edgeAnimator = ValueAnimator.ofInt(start, target).apply {
+            duration = dur
+            addUpdateListener {
+                params?.let { pr ->
+                    pr.y = it.animatedValue as Int
+                    overlayView?.let { v -> windowManager?.updateViewLayout(v, pr) }
+                }
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) { onEnd() }
+            })
+            start()
+        }
+    }
+
     private val screenW get() = resources.displayMetrics.widthPixels
     private val screenH get() = resources.displayMetrics.heightPixels
 
@@ -299,6 +375,8 @@ class PetOverlayService : Service() {
     override fun onDestroy() {
         handler.removeCallbacks(idleRunnable)
         handler.removeCallbacks(lonelyRunnable)
+        edgeRunHandler.removeCallbacksAndMessages(null)
+        edgeAnimator?.cancel()
         overlayView?.let {
             windowManager?.removeView(it)
             it.destroy()

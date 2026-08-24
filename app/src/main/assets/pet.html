@@ -56,6 +56,11 @@
   .fx-zzz   { top: -9px; left: 42px; font-size: 7px; }
   .fx-smoke { top: -9px; left: 8px; }
   .fx-bubble { top: 6px; left: 6px; font-size: 7px; }
+  .fx-music { top: -8px; left: 27px; font-size: 10px; }
+  .fx-note { font-size: 7px; }
+  .fx-note.n1 { top: -6px; left: 6px; animation-delay: .1s; }
+  .fx-note.n2 { top: 0px;  left: 58px; animation-delay: .35s; }
+  .fx-note.n3 { top: -10px; left: 38px; animation-delay: .6s; }
 
   /* 动作表情 */
   .act-happy .eye { height: 2px; border-radius: 50%; }
@@ -74,6 +79,7 @@
   @keyframes proudbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
   .act-wiggle { animation: wiggle .5s ease-in-out 4; }
   @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+  .act-music { animation: wiggle .45s ease-in-out 6; }
   /* 睡着 */
   .pet.asleep { opacity: .65; animation: none; }
 </style>
@@ -88,6 +94,10 @@
     <span class="fx fx-zzz">zZz</span>
     <span class="fx fx-smoke">💢</span>
     <span class="fx fx-bubble">🫧</span>
+    <span class="fx fx-music">🎧</span>
+    <span class="fx fx-note n1">♪</span>
+    <span class="fx fx-note n2">♫</span>
+    <span class="fx fx-note n3">♪</span>
     <div class="body">
       <div class="eye eye-left"></div>
       <div class="eye eye-right"></div>
@@ -142,7 +152,12 @@
     onLonely1: function() { say('(偷偷看你一眼)'); pet.classList.add('act-wiggle'); setTimeout(function() { pet.classList.remove('act-wiggle'); }, 1500); },
     onLonely2: function() { say('呼~呼~'); var b = document.querySelector('.fx-bubble'); if (b) b.classList.add('show'); setTimeout(function() { if (b) b.classList.remove('show'); }, 3000); },
     onLonely3: function() { pet.classList.add('act-sleepy'); say('zZz... 好困'); },
-    onLonely4: function() { pet.classList.add('asleep'); say('(睡熟了...)'); }
+    onLonely4: function() { pet.classList.add('asleep'); say('(睡熟了...)'); },
+    // 边缘跑：沿屏幕边缘滑跑时的动作
+    onEdgeRun: function() {
+      pet.classList.add('act-wiggle');
+      setTimeout(function() { pet.classList.remove('act-wiggle'); }, 2200);
+    }
   };
 
   // 互动时唤醒
@@ -179,7 +194,7 @@
   }, 2 * 60 * 60 * 1000);
 
   // ===== 自主小动作：参考相册表情图，随机自觉做 =====
-  var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle'];
+  var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle','music'];
   var FX = {
     happy: ['.fx-heart'],
     sleepy: ['.fx-zzz'],
@@ -187,7 +202,8 @@
     cry: ['.fx-tear', '.fx-tear.r'],
     proud: ['.fx-star'],
     jump: [],
-    wiggle: []
+    wiggle: [],
+    music: ['.fx-music', '.fx-note.n1', '.fx-note.n2', '.fx-note.n3']
   };
   function clearFx() {
     document.querySelectorAll('.fx').forEach(function(el) { el.classList.remove('show'); });
