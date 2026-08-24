@@ -24,7 +24,7 @@
             android:layout_marginTop="4dp"
             android:text="形象固定为橙色方块小人（无嘴设定），所有功能可在此开关。"
             android:textSize="12sp"
-            android:textColor="#888888" />
+            android:textColor="#666666" />
 
         <!-- 权限区 -->
         <TextView
@@ -133,7 +133,7 @@
             android:layout_marginTop="4dp"
             android:text="配置后端后桌宠会轮询该地址获取 AI 消息（默认留空 = 不连接任何 AI，别人下载也无法接触你的 AI）"
             android:textSize="11sp"
-            android:textColor="#888888" />
+            android:textColor="#666666" />
 
         <EditText
             android:textColor="#333333"
