@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -35,6 +36,19 @@ class MainActivity : AppCompatActivity() {
         bindSwitch(R.id.sw_water, "pref_water", true)
         bindSwitch(R.id.sw_keyboard, "pref_keyboard", true)
         bindSwitch(R.id.sw_ai, "pref_ai_channel", true)
+
+        // AI 服务配置（可空 = 不连任何 AI，保护私有）
+        val etUrl = findViewById<EditText>(R.id.et_ai_url)
+        val etKey = findViewById<EditText>(R.id.et_ai_key)
+        etUrl.setText(prefs.getString("pref_ai_url", ""))
+        etKey.setText(prefs.getString("pref_ai_key", ""))
+        findViewById<Button>(R.id.btn_save_ai).setOnClickListener {
+            prefs.edit()
+                .putString("pref_ai_url", etUrl.text.toString().trim())
+                .putString("pref_ai_key", etKey.text.toString().trim())
+                .apply()
+            Toast.makeText(this, "AI 配置已保存（重启桌宠生效）", Toast.LENGTH_SHORT).show()
+        }
 
         findViewById<Button>(R.id.btn_start).setOnClickListener {
             if (!Settings.canDrawOverlays(this)) {

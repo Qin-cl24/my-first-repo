@@ -161,6 +161,7 @@ class PetOverlayService : Service() {
     private var posBeforeKeyboardY = 0
     private val aiHandler = Handler(Looper.getMainLooper())
     private var aiLastContent = ""
+    private var aiLinkLast = ""
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
@@ -449,7 +450,36 @@ class PetOverlayService : Service() {
                 // 文件读取失败（权限等）静默跳过
             }
         }
+        pollAiLink()
         aiHandler.postDelayed(aiWatchRunnable, 2000)
+    }
+
+    // AI 服务链接（可选）：配置了才轮询，默认空 = 不连任何 AI（保护私有）
+    private fun pollAiLink() {
+        val p = getSharedPreferences("deskpet_prefs", MODE_PRIVATE)
+        val url = p.getString("pref_ai_url", "") ?: ""
+        if (url.isBlank()) return
+        Thread {
+            try {
+                val conn = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 5000
+                    readTimeout = 5000
+                    val key = p.getString("pref_ai_key", "") ?: ""
+                    if (key.isNotBlank()) setRequestProperty("Authorization", "Bearer $key")
+                }
+                if (conn.responseCode == 200) {
+                    val body = conn.inputStream.bufferedReader().readText().trim()
+                    if (body.isNotEmpty() && body != aiLinkLast) {
+                        aiLinkLast = body
+                        aiHandler.post { handleAiMessage(body) }
+                    }
+                }
+                conn.disconnect()
+            } catch (e: Exception) {
+                // 网络失败静默
+            }
+        }.start()
     }
 
     private fun handleAiMessage(content: String) {
