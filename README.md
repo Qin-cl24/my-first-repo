@@ -20,6 +20,7 @@
 | 🎧 **听歌自嗨** | 戴上耳机 🎧 左右摇摆，周围飘小音符 ♪♫ |
 | ✨ **动作弹出** | 贴边半透明时做小动作会先弹出来刷存在感 |
 | 🙈 **躲猫猫** | 每 3~7 分钟随机淡出消失，在屏幕随机位置突然现身 |
+| 😲 **更多动作** | 惊吓!/思考?/庆祝🎉/撒娇🥺/小跑……动作池共 13 种随机出现 |
 
 ## 📱 安装
 
@@ -35,7 +36,8 @@
 
 | 版本 | 亮点 |
 |------|------|
-| [v1.10.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.10.0) | ⭐ 动作弹出（贴边时做动作会弹出来）+ 躲猫猫（随机消失→随机位置现身）（当前最新） |
+| [v1.11.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.11.0) | ⭐ 5 个新动作：惊吓!/思考?/庆祝🎉/撒娇/小跑（动作池 13 种）（当前最新） |
+| [v1.10.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.10.0) | 动作弹出（贴边时做动作会弹出来）+ 躲猫猫（随机消失→随机位置现身） |
 | [v1.9.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.9.0) | 边缘跑（随机沿屏幕边缘滑跑）+ 听歌自嗨（🎧摇摆+音符） |
 | [v1.8.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.8.0) | 4 大新功能：连击计数 / 时段感知 / 孤独递进 / 喝水提醒 |
 | [v1.7.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.7.0) | 自主小动作系统 |
