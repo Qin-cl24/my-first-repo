@@ -36,16 +36,9 @@
 
 | 版本 | 亮点 |
 |------|------|
-| [v1.11.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.11.0) | ⭐ 交互行为增强包（合并版）：边缘跑 / 听歌自嗨 / 动作弹出 / 躲猫猫 / 惊吓·思考·庆祝·撒娇·小跑，动作池 13 种（当前最新） |
-| [v1.8.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.8.0) | 4 大新功能：连击计数 / 时段感知 / 孤独递进 / 喝水提醒 |
-| [v1.7.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.7.0) | 自主小动作系统 |
-| [v1.6.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.6.0) | 悬浮球：自动贴边半透明、防拖丢 |
-| [v1.5.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.5.0) | 窗口 64dp + 手 8×8 同色（形象定型） |
-| [v1.4.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.4.0) | 手加强（深棕描边） |
-| [v1.3.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.3.0) | 手可见性修复 |
-| [v1.2.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.2.0) | 气泡移头顶 |
-| [v1.1.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.1.0) | 手腿缩短 |
-| [v1.0.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.0.0) | 首版可安装（修复崩溃） |
+| [v2.0.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v2.0.0) | ⭐ **行为增强版**（最新）：边缘跑 / 听歌自嗨 / 动作弹出 / 躲猫猫 / 13 种动作池 |
+| [v1.1.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.1.0) | **智能行为版**：悬浮球贴边 / 自主小动作 / 连击计数 / 时段感知 / 孤独递进 / 喝水提醒 |
+| [v1.0.0](https://github.com/Qin-cl24/my-first-repo/releases/tag/v1.0.0) | **基础版**：形象定型 + 悬浮窗 + 手势交互 + 气泡 |
 
 ## 🛠️ 技术结构
 
