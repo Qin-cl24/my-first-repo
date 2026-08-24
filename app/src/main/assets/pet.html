@@ -93,6 +93,9 @@
   .act-cute .eye { width: 8px; height: 8px; border-radius: 50%; }
   .act-run { animation: run .15s linear infinite; }
   @keyframes run { 0%,100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-1px) rotate(-4deg); } 75% { transform: translateY(1px) rotate(4deg); } }
+  /* 趴键盘 */
+  .act-crouch { animation: crouch 1.5s ease-in-out infinite; }
+  @keyframes crouch { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.8) translateY(3px); } }
   /* 睡着 */
   .pet.asleep { opacity: .65; animation: none; }
 </style>
@@ -182,7 +185,15 @@
       pet.classList.add('act-happy');
       var s = document.querySelector('.fx-star'); if (s) s.classList.add('show');
       setTimeout(function() { pet.classList.remove('act-happy'); clearFx(); }, 1500);
-    }
+    },
+    // 键盘弹出：趴到键盘上方
+    onKeyboardUp: function() {
+      pet.classList.add('act-crouch');
+      say('键盘！我趴这儿咯~');
+      setTimeout(function() { pet.classList.remove('act-crouch'); }, 4000);
+    },
+    // 键盘收起：回原位
+    onKeyboardHide: function() { say('键盘走了~'); }
   };
 
   // 互动时唤醒

@@ -99,6 +99,22 @@ class PetOverlayService : Service() {
             }
             webViewClient = WebViewClient()
             addJavascriptInterface(this, "AndroidBridge")
+            // 键盘感知：Android 12+ 全局 IME insets，悬浮窗也能收到
+            if (Build.VERSION.SDK_INT >= 30) {
+                setOnApplyWindowInsetsListener { v, insets ->
+                    val ime = insets.getInsets(android.view.WindowInsets.Type.ime())
+                    if (ime.bottom > 0 && !keyboardVisible) {
+                        keyboardVisible = true
+                        imeHeightPx = ime.bottom
+                        onKeyboardShow()
+                    } else if (ime.bottom == 0 && keyboardVisible) {
+                        keyboardVisible = false
+                        imeHeightPx = 0
+                        onKeyboardHide()
+                    }
+                    insets
+                }
+            }
             loadUrl("file:///android_asset/pet.html")
             setOnTouchListener(createTouchListener())
         }
@@ -136,6 +152,9 @@ class PetOverlayService : Service() {
     private val edgeRunHandler = Handler(Looper.getMainLooper())
     private var edgeAnimator: ValueAnimator? = null
     private val peekabooHandler = Handler(Looper.getMainLooper())
+    private var keyboardVisible = false
+    private var imeHeightPx = 0
+    private var posBeforeKeyboardY = 0
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
@@ -372,6 +391,26 @@ class PetOverlayService : Service() {
             })
             start()
         }
+    }
+
+    // === 键盘感知：弹出时趴到键盘上方，收起时回原位 ===
+    private fun onKeyboardShow() {
+        val p = params ?: return
+        posBeforeKeyboardY = p.y
+        if (docked) undock()
+        // 移到键盘正上方（键盘顶边之上，不挡按键）
+        val targetY = (screenH - imeHeightPx - p.height).coerceAtLeast(0)
+        p.y = targetY
+        overlayView?.let { windowManager?.updateViewLayout(it, p) }
+        overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onKeyboardUp()", null)
+    }
+
+    private fun onKeyboardHide() {
+        params?.let { p ->
+            p.y = posBeforeKeyboardY
+            overlayView?.let { windowManager?.updateViewLayout(it, p) }
+        }
+        overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onKeyboardHide()", null)
     }
 
     private val screenW get() = resources.displayMetrics.widthPixels
