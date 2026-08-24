@@ -193,13 +193,31 @@
       setTimeout(function() { pet.classList.remove('act-crouch'); }, 4000);
     },
     // 键盘收起：回原位
-    onKeyboardHide: function() { say('键盘走了~'); }
+    onKeyboardHide: function() { say('键盘走了~'); },
+    // AI 消息通道：AI 通过文件推送消息（动作名|文本）
+    onAiSay: function(text, action) {
+      say(text, 4000);
+      if (action && action !== 'none' && ACTIONS.indexOf(action) >= 0) {
+        pet.classList.remove('blink');
+        ACTIONS.forEach(function(a) { pet.classList.remove('act-' + a); });
+        pet.classList.add('act-' + action);
+        (FX[action] || []).forEach(function(sel) {
+          var el = document.querySelector(sel); if (el) el.classList.add('show');
+        });
+        setTimeout(function() { pet.classList.remove('act-' + action); clearFx(); }, 2500);
+      }
+    }
   };
 
   // 互动时唤醒
   function wakeUp() {
     pet.classList.remove('asleep', 'act-sleepy');
     clearFx();
+  }
+
+  // 读取设置开关（原生 SharedPreferences）
+  function getPref(key, def) {
+    try { return window.AndroidBridge ? AndroidBridge.getPref(key, def) : def; } catch (e) { return def; }
   }
 
   pet.addEventListener('click', () => window.petEngine.onTap());
@@ -221,13 +239,15 @@
   };
   function randomSay(pool) { say(pool[Math.floor(Math.random() * pool.length)]); }
 
-  // ===== 喝水提醒：每2小时，越不理越凶 =====
+  // ===== 喝水提醒：每2小时，越不理越凶（可开关） =====
   var waterLv = 0;
   var WATER_MSGS = ['该喝水啦～💧','都说了要喝水！💧💧','再不喝我就生气了！(｀へ´)','(盯着你) 水！水！'];
-  setInterval(function() {
-    waterLv++;
-    say(WATER_MSGS[(waterLv - 1) % WATER_MSGS.length], 4000);
-  }, 2 * 60 * 60 * 1000);
+  if (getPref('pref_water', true)) {
+    setInterval(function() {
+      waterLv++;
+      say(WATER_MSGS[(waterLv - 1) % WATER_MSGS.length], 4000);
+    }, 2 * 60 * 60 * 1000);
+  }
 
   // ===== 自主小动作：参考相册表情图，随机自觉做 =====
   var ACTIONS = ['happy','sleepy','angry','cry','proud','jump','wiggle','music','shock','think','celebrate','cute','run'];
@@ -251,6 +271,7 @@
   }
   function runAction() {
     if (pet.classList.contains('asleep')) return;
+    if (!getPref('pref_idle_actions', true)) return;
     // 做小动作时通知原生层从贴边弹出，刷存在感
     try { window.AndroidBridge && window.AndroidBridge.peekOut(); } catch (e) {}
     pet.classList.remove('blink');

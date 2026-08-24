@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
@@ -102,15 +103,17 @@ class PetOverlayService : Service() {
             // 键盘感知：Android 12+ 全局 IME insets，悬浮窗也能收到
             if (Build.VERSION.SDK_INT >= 30) {
                 setOnApplyWindowInsetsListener { v, insets ->
-                    val ime = insets.getInsets(android.view.WindowInsets.Type.ime())
-                    if (ime.bottom > 0 && !keyboardVisible) {
-                        keyboardVisible = true
-                        imeHeightPx = ime.bottom
-                        onKeyboardShow()
-                    } else if (ime.bottom == 0 && keyboardVisible) {
-                        keyboardVisible = false
-                        imeHeightPx = 0
-                        onKeyboardHide()
+                    if (prefBool("pref_keyboard", true)) {
+                        val ime = insets.getInsets(android.view.WindowInsets.Type.ime())
+                        if (ime.bottom > 0 && !keyboardVisible) {
+                            keyboardVisible = true
+                            imeHeightPx = ime.bottom
+                            onKeyboardShow()
+                        } else if (ime.bottom == 0 && keyboardVisible) {
+                            keyboardVisible = false
+                            imeHeightPx = 0
+                            onKeyboardHide()
+                        }
                     }
                     insets
                 }
@@ -125,6 +128,7 @@ class PetOverlayService : Service() {
             resetLonelyTimer()
             scheduleEdgeRun()
             schedulePeekaboo()
+            scheduleAiWatch()
             Toast.makeText(this, "桌宠已上线！", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "启动失败：${e.message}", Toast.LENGTH_LONG).show()
@@ -155,6 +159,8 @@ class PetOverlayService : Service() {
     private var keyboardVisible = false
     private var imeHeightPx = 0
     private var posBeforeKeyboardY = 0
+    private val aiHandler = Handler(Looper.getMainLooper())
+    private var aiLastContent = ""
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
@@ -276,6 +282,7 @@ class PetOverlayService : Service() {
     // === 边缘跑：随机沿屏幕边缘滑跑一段，然后贴边 ===
     private fun scheduleEdgeRun() {
         edgeRunHandler.removeCallbacksAndMessages(null)
+        if (!prefBool("pref_edge_run", true)) return
         edgeRunHandler.postDelayed({
             edgeRun()
             scheduleEdgeRun()
@@ -351,9 +358,15 @@ class PetOverlayService : Service() {
         resetIdleTimer()
     }
 
+    // === JS 桥：读取设置开关 ===
+    @android.webkit.JavascriptInterface
+    fun getPref(key: String, def: Boolean): Boolean =
+        getSharedPreferences("deskpet_prefs", MODE_PRIVATE).getBoolean(key, def)
+
     // === 躲猫猫：随机消失 → 随机位置突然出现 ===
     private fun schedulePeekaboo() {
         peekabooHandler.removeCallbacksAndMessages(null)
+        if (!prefBool("pref_peekaboo", true)) return
         peekabooHandler.postDelayed({
             peekaboo()
             schedulePeekaboo()
@@ -413,13 +426,57 @@ class PetOverlayService : Service() {
         overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onKeyboardHide()", null)
     }
 
+    // === AI 消息通道：监听 /sdcard/Deskpet/messages.txt（格式：动作名|文本） ===
+    private fun scheduleAiWatch() {
+        aiHandler.removeCallbacksAndMessages(null)
+        aiHandler.postDelayed(aiWatchRunnable, 2000)
+    }
+
+    private val aiWatchRunnable = Runnable { watchAiMessages() }
+
+    private fun watchAiMessages() {
+        if (prefBool("pref_ai_channel", true)) {
+            try {
+                val f = java.io.File("/sdcard/Deskpet/messages.txt")
+                if (f.exists() && f.canRead()) {
+                    val content = f.readText().trim()
+                    if (content.isNotEmpty() && content != aiLastContent) {
+                        aiLastContent = content
+                        handleAiMessage(content)
+                    }
+                }
+            } catch (e: Exception) {
+                // 文件读取失败（权限等）静默跳过
+            }
+        }
+        aiHandler.postDelayed(aiWatchRunnable, 2000)
+    }
+
+    private fun handleAiMessage(content: String) {
+        val parts = content.split("|", limit = 2)
+        val action = parts[0].trim()
+        val text = if (parts.size > 1) parts[1].trim() else action
+        val js = if (parts.size > 1)
+            "window.petEngine && window.petEngine.onAiSay(${escapeJs(text)}, '${escapeJs(action)}')"
+        else
+            "window.petEngine && window.petEngine.onAiSay(${escapeJs(text)}, 'none')"
+        overlayView?.evaluateJavascript(js, null)
+        if (docked) undock()  // 说话时弹出来刷存在感
+    }
+
+    private fun escapeJs(s: String): String =
+        "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
     private val screenW get() = resources.displayMetrics.widthPixels
     private val screenH get() = resources.displayMetrics.heightPixels
 
     // === 悬浮球：无操作自动贴边 + 半透明 ===
+    private fun prefBool(key: String, def: Boolean): Boolean =
+        getSharedPreferences("deskpet_prefs", MODE_PRIVATE).getBoolean(key, def)
+
     private fun resetIdleTimer() {
         handler.removeCallbacks(idleRunnable)
-        handler.postDelayed(idleRunnable, IDLE_TIMEOUT_MS)
+        if (prefBool("pref_dock", true)) handler.postDelayed(idleRunnable, IDLE_TIMEOUT_MS)
     }
 
     private fun dockToEdge() {
@@ -469,6 +526,7 @@ class PetOverlayService : Service() {
         handler.removeCallbacks(lonelyRunnable)
         edgeRunHandler.removeCallbacksAndMessages(null)
         peekabooHandler.removeCallbacksAndMessages(null)
+        aiHandler.removeCallbacksAndMessages(null)
         edgeAnimator?.cancel()
         overlayView?.let {
             windowManager?.removeView(it)
