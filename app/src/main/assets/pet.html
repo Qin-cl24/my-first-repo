@@ -157,6 +157,13 @@
     onEdgeRun: function() {
       pet.classList.add('act-wiggle');
       setTimeout(function() { pet.classList.remove('act-wiggle'); }, 2200);
+    },
+    // 躲猫猫现身：突然出现在随机位置
+    onPeekaboo: function() {
+      say('嘿嘿 我在这儿！');
+      pet.classList.add('act-happy');
+      var s = document.querySelector('.fx-star'); if (s) s.classList.add('show');
+      setTimeout(function() { pet.classList.remove('act-happy'); clearFx(); }, 1500);
     }
   };
 
@@ -210,6 +217,8 @@
   }
   function runAction() {
     if (pet.classList.contains('asleep')) return;
+    // 做小动作时通知原生层从贴边弹出，刷存在感
+    try { window.AndroidBridge && window.AndroidBridge.peekOut(); } catch (e) {}
     pet.classList.remove('blink');
     ACTIONS.forEach(function(a) { pet.classList.remove('act-' + a); });
     clearFx();

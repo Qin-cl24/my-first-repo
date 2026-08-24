@@ -98,6 +98,7 @@ class PetOverlayService : Service() {
                 cacheMode = WebSettings.LOAD_DEFAULT
             }
             webViewClient = WebViewClient()
+            addJavascriptInterface(this, "AndroidBridge")
             loadUrl("file:///android_asset/pet.html")
             setOnTouchListener(createTouchListener())
         }
@@ -107,6 +108,7 @@ class PetOverlayService : Service() {
             resetIdleTimer()
             resetLonelyTimer()
             scheduleEdgeRun()
+            schedulePeekaboo()
             Toast.makeText(this, "桌宠已上线！", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "启动失败：${e.message}", Toast.LENGTH_LONG).show()
@@ -133,6 +135,7 @@ class PetOverlayService : Service() {
     private val lonelyRunnable = Runnable { advanceLoneliness() }
     private val edgeRunHandler = Handler(Looper.getMainLooper())
     private var edgeAnimator: ValueAnimator? = null
+    private val peekabooHandler = Handler(Looper.getMainLooper())
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
@@ -144,6 +147,7 @@ class PetOverlayService : Service() {
                     resetLonelyTimer()
                     edgeAnimator?.cancel()
                     scheduleEdgeRun()
+                    schedulePeekaboo()
                     initialX = params?.x ?: 0
                     initialY = params?.y ?: 0
                     initialTouchX = event.rawX
@@ -321,6 +325,55 @@ class PetOverlayService : Service() {
         }
     }
 
+    // === JS 桥：桌宠做小动作时从贴边弹出，刷存在感 ===
+    @android.webkit.JavascriptInterface
+    fun peekOut() {
+        if (docked) undock()
+        resetIdleTimer()
+    }
+
+    // === 躲猫猫：随机消失 → 随机位置突然出现 ===
+    private fun schedulePeekaboo() {
+        peekabooHandler.removeCallbacksAndMessages(null)
+        peekabooHandler.postDelayed({
+            peekaboo()
+            schedulePeekaboo()
+        }, 3 * 60 * 1000L + (Math.random() * 4 * 60 * 1000L).toLong())  // 3~7 分钟随机
+    }
+
+    private fun peekaboo() {
+        val p = params ?: return
+        // 先淡出消失
+        animateAlpha(0f, 250L) {
+            // 随机出现在屏幕内任意位置
+            val w = p.width; val h = p.height
+            p.x = (Math.random() * (screenW - w)).toInt()
+            p.y = (Math.random() * (screenH - h)).toInt()
+            overlayView?.let { windowManager?.updateViewLayout(it, p) }
+            overlayView?.evaluateJavascript("window.petEngine && window.petEngine.onPeekaboo()", null)
+            // 淡入现身
+            animateAlpha(1f, 250L)
+        }
+    }
+
+    private fun animateAlpha(target: Float, dur: Long, onEnd: () -> Unit = {}) {
+        val p = params ?: return
+        val start = p.alpha
+        ValueAnimator.ofFloat(start, target).apply {
+            duration = dur
+            addUpdateListener {
+                params?.let { pr ->
+                    pr.alpha = it.animatedValue as Float
+                    overlayView?.let { v -> windowManager?.updateViewLayout(v, pr) }
+                }
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) { onEnd() }
+            })
+            start()
+        }
+    }
+
     private val screenW get() = resources.displayMetrics.widthPixels
     private val screenH get() = resources.displayMetrics.heightPixels
 
@@ -376,6 +429,7 @@ class PetOverlayService : Service() {
         handler.removeCallbacks(idleRunnable)
         handler.removeCallbacks(lonelyRunnable)
         edgeRunHandler.removeCallbacksAndMessages(null)
+        peekabooHandler.removeCallbacksAndMessages(null)
         edgeAnimator?.cancel()
         overlayView?.let {
             windowManager?.removeView(it)
